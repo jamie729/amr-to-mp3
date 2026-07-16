@@ -62,6 +62,17 @@ DECODER = os.environ.get(
     os.path.join(_app_dir(), "silk_decoder.exe"),
 )
 
+SUPPORTED_INPUT_SUFFIXES = {".amr", ".silk"}
+
+
+def _find_input_files(directory: Path) -> list[Path]:
+    """Return supported audio files in a directory, case-insensitively."""
+    return sorted(
+        (path for path in directory.iterdir()
+         if path.is_file() and path.suffix.lower() in SUPPORTED_INPUT_SUFFIXES),
+        key=lambda path: path.name.lower(),
+    )
+
 
 def _find_ffmpeg() -> str | None:
     local = os.path.join(_app_dir(), "ffmpeg.exe")
@@ -261,7 +272,7 @@ class App(ctk.CTk):
             self.input_entry.configure(placeholder_text="选择要转换的文件...")
             self.input_btn.configure(text="选择文件")
         else:
-            self.input_entry.configure(placeholder_text="选择包含 AMR 文件的文件夹...")
+            self.input_entry.configure(placeholder_text="选择包含 AMR / SILK 文件的文件夹...")
             self.input_btn.configure(text="选择文件夹")
 
     def _apply_appearance(self, _=None):
@@ -279,13 +290,16 @@ class App(ctk.CTk):
         mode = self.mode_var.get()
         if mode == "single":
             f = filedialog.askopenfilename(
-                title="选择 AMR 文件",
-                filetypes=[("音频文件", "*.amr *.AMR"), ("所有文件", "*.*")],
+                title="选择 AMR / SILK 文件",
+                filetypes=[
+                    ("AMR / SILK 音频", "*.amr *.AMR *.silk *.SILK"),
+                    ("所有文件", "*.*"),
+                ],
             )
             if f:
                 self.input_var.set(f)
         else:
-            d = filedialog.askdirectory(title="选择包含 AMR 文件的目录")
+            d = filedialog.askdirectory(title="选择包含 AMR / SILK 文件的目录")
             if d:
                 self.input_var.set(d)
 
@@ -355,27 +369,27 @@ class App(ctk.CTk):
             dst = Path(out_val) if out_val and out_val != "-- 与输入同目录 --" else src
             dst.mkdir(parents=True, exist_ok=True)
 
-            amr_files = list(set(src.glob("*.amr")) | set(src.glob("*.AMR")))
-            if not amr_files:
-                self._log("未找到 AMR 文件")
+            input_files = _find_input_files(src)
+            if not input_files:
+                self._log("未找到 AMR / SILK 文件")
                 self._on_done()
                 return
 
-            self._log(f"找到 {len(amr_files)} 个 AMR 文件\n")
+            self._log(f"找到 {len(input_files)} 个 AMR / SILK 文件\n")
             exp = os.path.expandvars(os.path.expanduser(decoder_path))
             success = fail = 0
 
-            for i, amr_file in enumerate(amr_files, 1):
-                mp3_file = dst / f"{amr_file.stem}.mp3"
-                self._log(f"[{i}/{len(amr_files)}] {amr_file.name} -> {mp3_file.name}")
-                err = convert_amr_to_mp3(str(amr_file), str(mp3_file), ffmpeg_path, exp)
+            for i, input_file in enumerate(input_files, 1):
+                mp3_file = dst / f"{input_file.stem}.mp3"
+                self._log(f"[{i}/{len(input_files)}] {input_file.name} -> {mp3_file.name}")
+                err = convert_amr_to_mp3(str(input_file), str(mp3_file), ffmpeg_path, exp)
                 if err is None:
                     success += 1
                     self._log("  成功 ✓")
                 else:
                     fail += 1
                     self._log(f"  失败 ✗: {err}")
-                self.after(0, lambda p=i / len(amr_files): self.progress.set(p))
+                self.after(0, lambda p=i / len(input_files): self.progress.set(p))
 
             self._log(f"\n完成! 成功 {success}, 失败 {fail}")
 

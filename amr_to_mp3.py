@@ -51,6 +51,17 @@ DECODER = os.environ.get(
     os.path.join(_app_dir(), "silk_decoder.exe"),
 )
 
+SUPPORTED_INPUT_SUFFIXES = {".amr", ".silk"}
+
+
+def _find_input_files(directory: Path) -> list[Path]:
+    """Return supported audio files in a directory, case-insensitively."""
+    return sorted(
+        (path for path in directory.iterdir()
+         if path.is_file() and path.suffix.lower() in SUPPORTED_INPUT_SUFFIXES),
+        key=lambda path: path.name.lower(),
+    )
+
 
 def _find_silk_offset(filepath: str) -> int:
     with open(filepath, "rb") as f:
@@ -126,18 +137,18 @@ def batch_convert(input_dir: str, output_dir: str | None = None) -> None:
 
     dst.mkdir(parents=True, exist_ok=True)
 
-    amr_files = list(set(src.glob("*.amr")) | set(src.glob("*.AMR")))
-    if not amr_files:
-        print(f"{src} 下没有找到 AMR 文件")
+    input_files = _find_input_files(src)
+    if not input_files:
+        print(f"{src} 下没有找到 AMR / SILK 文件")
         return
 
-    print(f"找到 {len(amr_files)} 个 AMR 文件\n")
+    print(f"找到 {len(input_files)} 个 AMR / SILK 文件\n")
     success = fail = 0
 
-    for amr_file in amr_files:
-        mp3_file = dst / f"{amr_file.stem}.mp3"
-        print(f"转换: {amr_file.name} -> {mp3_file.name}")
-        if convert_amr_to_mp3(str(amr_file), str(mp3_file)):
+    for input_file in input_files:
+        mp3_file = dst / f"{input_file.stem}.mp3"
+        print(f"转换: {input_file.name} -> {mp3_file.name}")
+        if convert_amr_to_mp3(str(input_file), str(mp3_file)):
             success += 1
         else:
             fail += 1
@@ -161,7 +172,7 @@ def convert_single(input_path: str, output_path: str | None = None) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="AMR/SILK v3 转 MP3")
-    parser.add_argument("-i", "--input", required=True, help="输入的 AMR 文件或目录")
+    parser.add_argument("-i", "--input", required=True, help="输入的 AMR / SILK 文件或目录")
     parser.add_argument("-o", "--output", default=None, help="输出的文件或目录（默认同位置）")
     args = parser.parse_args()
 

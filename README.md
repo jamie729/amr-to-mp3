@@ -48,11 +48,14 @@ python amr_to_mp3.py        # 命令行
 ```bash
 # 单文件转换
 python amr_to_mp3.py -i voice.amr
+python amr_to_mp3.py -i voice.silk
 
 # 批量转换
 python amr_to_mp3.py -i ./audio_folder
 python amr_to_mp3.py -i ./audio_folder -o ./output_folder
 ```
+
+批量转换会识别目录中的 `.amr` 和 `.silk` 文件，扩展名大小写均可。
 
 ## 依赖说明
 
