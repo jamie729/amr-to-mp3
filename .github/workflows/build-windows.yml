@@ -1,0 +1,56 @@
+name: Build Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: python -m pip install customtkinter==5.2.2 pyinstaller==6.14.2
+
+      - name: Build executable
+        shell: pwsh
+        run: >-
+          python -m PyInstaller
+          --noconfirm
+          --clean
+          --onefile
+          --windowed
+          --name "AMR转MP3"
+          amr_to_mp3_gui.py
+
+      - name: Create release package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path package | Out-Null
+          Copy-Item "dist/AMR转MP3.exe" package/
+          Copy-Item ffmpeg.exe package/
+          Copy-Item silk_decoder.exe package/
+          Copy-Item README.md package/
+          Compress-Archive -Path package/* -DestinationPath AMR-MP3-Windows.zip
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMR-MP3-Windows
+          path: AMR-MP3-Windows.zip
+          if-no-files-found: error
+          retention-days: 30

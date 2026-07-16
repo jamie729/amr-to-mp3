@@ -31,6 +31,12 @@ AMR转MP3/
 > **注意：** `ffmpeg.exe` 和 `silk_decoder.exe` 是转换所必须的外部依赖，
 > 删除后程序无法运行。两个文件需与 exe 放在同一目录。
 
+### GitHub Actions 自动打包
+
+推送到 `main` 分支后，GitHub Actions 会自动构建 Windows 版本。也可以在
+仓库的 **Actions → Build Windows release → Run workflow** 中手动运行。
+构建完成后，在对应运行页面的 **Artifacts** 区域下载 `AMR-MP3-Windows`。
+
 ### 方式二：源码运行
 
 ```bash
