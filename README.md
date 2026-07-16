@@ -36,6 +36,7 @@ AMR转MP3/
 推送到 `main` 分支后，GitHub Actions 会自动构建 Windows 版本。也可以在
 仓库的 **Actions → Build Windows release → Run workflow** 中手动运行。
 构建完成后，在对应运行页面的 **Artifacts** 区域下载 `AMR-MP3-Windows`。
+推送 `v*` 版本标签时，还会自动创建 GitHub Release 并附上永久下载包。
 
 ### 方式二：源码运行
 
